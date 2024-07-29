@@ -1,118 +1,56 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
-
-import React from 'react';
-import type {PropsWithChildren} from 'react';
-import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  useColorScheme,
-  View,
-} from 'react-native';
-
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
-
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
-
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
-}
-
-function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+import React, { useEffect } from 'react';
+import {StyleSheet, ToastAndroid, View} from 'react-native';
+import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
+import {UserContextProvider} from './src/context/usercontext';
+import {SocketContextProvider} from './src/context/socketcontext';
+import {MessagesContextProvider} from './src/context/messagecontext';
+import StackNavigation from './src/navigation/StackNavigation';
+import ToastManager from 'toastify-react-native';
+import {PERMISSIONS, request} from 'react-native-permissions';
+const queryClient = new QueryClient();
+const App = () => {
+  const requestStoragePermissions = async () => {
+    try {
+      const results = await request(PERMISSIONS.ANDROID.POST_NOTIFICATIONS);
+      console.log(results);
+    } catch (error) {
+      ToastAndroid.show(
+        'Error requesting permissions:' + error,
+        ToastAndroid.SHORT,
+      );
+    }
   };
 
+  useEffect(()=>{
+    requestStoragePermissions()
+  },[])
   return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+    <QueryClientProvider client={queryClient}>
+      <UserContextProvider>
+        <SocketContextProvider>
+          <MessagesContextProvider>
+            <View style={styles.container}>
+              <StackNavigation />
+              <ToastManager
+                animationStyle={'rightInOut'}
+                positionValue={10}
+                style={styles.toastManager}
+              />
+            </View>
+          </MessagesContextProvider>
+        </SocketContextProvider>
+      </UserContextProvider>
+    </QueryClientProvider>
   );
-}
-
-const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-  },
-  highlight: {
-    fontWeight: '700',
-  },
-});
+};
 
 export default App;
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  toastManager: {
+    right: 0,
+  },
+});
